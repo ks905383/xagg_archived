@@ -10,7 +10,10 @@ import warnings
 import xesmf as xe
 
 def normalize(a):
-    return a/a.sum()
+    if (np.all(~np.isnan(a))) & (a.sum()>0):
+        return a/a.sum()
+    else:
+        return a*np.nan
 
 def fix_ds(ds,var_cipher = {'latitude':{'latitude':'lat','longitude':'lon'},
                             'Latitude':{'Latitude':'lat','Longitude':'lon'},
