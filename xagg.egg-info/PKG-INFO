@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: xagg
-Version: 0.0.5
+Version: 0.0.6
 Summary: Aggregating raster data over polygons
 Home-page: https://github.com/ks905383/xagg
 Author: Kevin Schwarzwald

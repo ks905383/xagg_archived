@@ -4,6 +4,13 @@
 
 A package (eventually) to aggregated gridded data in `xarray` to polygons in `geopandas` using area-weighting from the relative area overlaps between pixels and polygons. Check out the binder link above for a sample code run!
 
+## Installation 
+The easiest way to install `xagg` is using `pip`. Beware though - `xagg` is still a work in progress; I suggest you install it to a virtual environment first (using e.g. `venv`, or just creating a separate environment in `conda` for projects using `xagg`). 
+
+```
+pip install xagg
+```
+
 ## Intro 
 Science often happens on grids - gridded weather products, interpolated pollution data, night time lights, remote sensing all approximate the continuous real world for reasons of data resolution, processing time, or ease of calculation.
 
