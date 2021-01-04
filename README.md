@@ -57,7 +57,7 @@ Area-weighting of pixels onto polygons ensures that aggregating weather and clim
 `xagg` allows a simple population *and* area-averaging, in addition to export functions that will turn the aggregated data into output easily used in STATA or R for further calculations. 
 
 ## Left to do
-- Make this a package. It's currently a somewhat stable module, but a goal is to have this be a fully-built and tested package. 
+- ~Make this a package. It's currently a somewhat stable module, but a goal is to have this be a fully-built and tested package.~ Complete!
 - Make the outputs to the two main wrapper functinos (`xagg.pixel_overlaps` and `xagg.aggregate`) their own `classes` with the export functions as bound methods of the `xagg.aggregate` output class. 
 - Just testing, bug fixes, stability checks, etc.
 - Share widely! I hope this will be helpful to a wide group of natural and social scientists who have to work with both gridded and polygon data!
