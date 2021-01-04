@@ -1,0 +1,19 @@
+name: binder_environment
+channels:
+    - conda-forge
+    - defaults
+dependencies:
+    - python=3.7    # Python version 3.7
+    - geopandas
+    - cartopy       # Geographic plotting toolkit
+    - matplotlib    # 2D plotting library
+    - netcdf4       # Wrapper for netcdf4
+    - numpy         # N-d array and numerics
+    - pandas        # Labeled array library
+    - proj4         # geographic projections
+    - scipy         # Common math/stats/science functions
+    - xarray        # N-d labeled array library
+    - esmpy=7.1.0   # xesmf only works with this version or lower; there's some issue with MPI
+    - xesmf=0.2.1   # Geographical regridding based on ESMF (version issue same as above)
+    - nc-time-axis  # xarray suddenly claims it needs this for plotting
+        

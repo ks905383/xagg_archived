@@ -1,0 +1,8 @@
+README.md
+setup.py
+xagg/__init__.py
+xagg/xagg.py
+xagg.egg-info/PKG-INFO
+xagg.egg-info/SOURCES.txt
+xagg.egg-info/dependency_links.txt
+xagg.egg-info/top_level.txt

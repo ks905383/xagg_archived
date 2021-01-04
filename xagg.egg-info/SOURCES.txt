@@ -1,0 +1,12 @@
+README.md
+setup.py
+xagg/__init__.py
+xagg/xagg.py
+xagg.egg-info/PKG-INFO
+xagg.egg-info/SOURCES.txt
+xagg.egg-info/dependency_links.txt
+xagg.egg-info/top_level.txt
+xagg.egg-info/.ipynb_checkpoints/PKG-INFO-checkpoint
+xagg.egg-info/.ipynb_checkpoints/SOURCES-checkpoint.txt
+xagg.egg-info/.ipynb_checkpoints/dependency_links-checkpoint.txt
+xagg.egg-info/.ipynb_checkpoints/top_level-checkpoint.txt

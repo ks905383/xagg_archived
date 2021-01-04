@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="xagg",
-    version="0.0.1",
+    version="0.0.3",
     author="Kevin Schwarzwald",
     author_email="kschwarzwald@iri.columbia.edu",
     description="Aggregating raster data over polygons",
@@ -15,7 +15,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU GPLv3",
+        "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',

@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Polygon
-from matplotlib import pyplot as plt
-import cartopy 
-import cartopy.crs as ccrs
 import warnings
 import xesmf as xe
 
