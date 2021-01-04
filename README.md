@@ -35,6 +35,21 @@ gdf = gpd.open_dataset('file.shp')
 
 `xagg` will then figure out the geographic grid (lat/lon) in `ds`, create polygons for each pixel, and then generate intersects between every polygon in the shapefile and every pixel. For each polygon in the shapefile, the relative area of each covering pixel is calculated - so, for example, if a polygon (say, a US county) is the size and shape of a grid pixel, but is split halfway between two pixels, the weight for each pixel will be 0.5, and the value of the gridded variables on that polygon will just be the average of both [TO-DO: add visual example of this]. 
 
+The two lines I mentioned before? 
+```
+import xagg as xa
+
+# Get overlap between pixels and polygons
+pix_agg = xa.pixel_overlaps(ds,gdf)
+
+# Aggregate data in [ds] onto polygons
+gdf_out = xa.aggregate(ds,pix_agg)
+
+# gdf_out can now be converted into an xarray dataset (using xa.prep_for_nc()), 
+# or a geopandas geodataframe (using xa.prep_for_csv()), or directly exported 
+# to netcdf, csv, or shp files using xa.output_data().
+```
+
 I know you often need to weight your data by more than just its relative area overlap with a polygon (for example, do you want to weight pixels with more population more?). `xagg` has a built-in support for adding an additional weight grid (another `xarray` DataArray) into `xagg.pixel_overlaps()`. 
 
 Finally, `xagg` allows for direct exporting of the aggregated data in several commonly used data formats (please open issues if you'd like support for something else!):
