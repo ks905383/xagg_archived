@@ -40,14 +40,14 @@ The two lines mentioned before?
 import xagg as xa
 
 # Get overlap between pixels and polygons
-pix_agg = xa.pixel_overlaps(ds,gdf)
+weightmap = xa.pixel_overlaps(ds,gdf)
 
 # Aggregate data in [ds] onto polygons
-gdf_out = xa.aggregate(ds,pix_agg)
+aggregated = xa.aggregate(ds,weightmap)
 
-# gdf_out can now be converted into an xarray dataset (using xa.prep_for_nc()), 
-# or a geopandas geodataframe (using xa.prep_for_csv()), or directly exported 
-# to netcdf, csv, or shp files using xa.output_data().
+# aggregated can now be converted into an xarray dataset (using aggregated.to_dataset()), 
+# or a geopandas geodataframe (using aggregated.to_dataframe()), or directly exported 
+# to netcdf, csv, or shp files using aggregated.to_csv()/.to_netcdf()/.to_shp()
 ```
 
 Researchers often need to weight your data by more than just its relative area overlap with a polygon (for example, do you want to weight pixels with more population more?). `xagg` has a built-in support for adding an additional weight grid (another `xarray` DataArray) into `xagg.pixel_overlaps()`. 
@@ -72,9 +72,7 @@ Area-weighting of pixels onto polygons ensures that aggregating weather and clim
 `xagg` allows a simple population *and* area-averaging, in addition to export functions that will turn the aggregated data into output easily used in STATA or R for further calculations. 
 
 ## Left to do
-- ~Make this a package. It's currently a somewhat stable module, but a goal is to have this be a fully-built and tested package.~ Complete!
-- Make the outputs to the two main wrapper functinos (`xagg.pixel_overlaps` and `xagg.aggregate`) their own `classes` with the export functions as bound methods of the `xagg.aggregate` output class. 
-- Just testing, bug fixes, stability checks, etc.
+- Testing, bug fixes, stability checks, etc.
 - Share widely! I hope this will be helpful to a wide group of natural and social scientists who have to work with both gridded and polygon data!
 
 
