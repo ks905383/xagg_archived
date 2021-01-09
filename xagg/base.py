@@ -25,7 +25,8 @@ def fix_ds(ds,var_cipher = {'latitude':{'latitude':'lat','longitude':'lon'},
     Concretely, 
         1) grid variables are renamed "lat" and "lon"
         2) the lon dimension is made -180:180 to be consistent with most geographic
-           data
+           data (as well as any lon_bnds variable if chg_bnds=True (by default))
+        3) the dataset is sorted in ascending order in both lat and lon
     
     
     Keyword arguments:
@@ -42,7 +43,10 @@ def fix_ds(ds,var_cipher = {'latitude':{'latitude':'lat','longitude':'lon'},
                   the rest of their name matches 'o' (for lon) or 'a' (for lat. 
                   
     Returns:
-    a dataset with lat/lon variables in the format necessary for this package to function      
+    a dataset with lat/lon variables in the format necessary for this package to function
+    
+    NOTE: there probably should be a safeguard in case "y" and "x" are multiindex 
+    dimension names instead of lat/lon names... maybe a warning for now... (TO DO)
     """
     
     # List of variables that represent bounds
@@ -99,6 +103,9 @@ def fix_ds(ds,var_cipher = {'latitude':{'latitude':'lat','longitude':'lon'},
     # Sort by lon; this should be robust (and necessary to avoid fix_ds(fix_ds(ds)) 
     # from failing)
     ds = ds.sortby(ds.lon)
+    
+    # Sort by latitude as well (to make latitude consistent)
+    ds = ds.sortby(ds.lat)
         
     # Return fixed ds
     return ds
@@ -138,23 +145,26 @@ def process_weights(ds,weights=None,target='ds'):
                         'ds_grid':{'lat':ds.lat,'lon':ds.lon},
                         'weights_grid':{'lat':weights.lat,'lon':weights.lon}}
 
+        # Regrid, if necessary (do nothing if the grids match up to within
+        # floating-point precision)
+        if not ((ds.sizes['lat'] is weights.sizes['lat']) & (ds.sizes['lon'] is weights.sizes['lon'])):
+            if not (np.allclose(ds.lat,weights.lat) & np.allclose(ds.lon,weights.lon)):
+                if target is 'ds':
+                    print('regridding weights to data grid...')
+                    # Create regridder to the [ds] coordinates
+                    rgrd = xe.Regridder(weights,ds,'bilinear')
+                    # Regrid [weights] to [ds] grids
+                    weights = rgrd(weights)
 
-        if target is 'ds':
-            print('regridding weights to data grid...')
-            # Create regridder to the [ds] coordinates
-            rgrd = xe.Regridder(weights,ds,'bilinear')
-            # Regrid [weights] to [ds] grid
-            weights = rgrd(weights)
-            
-        elif target is 'weights':
-            print('regridding data to weights grid...')
-            # Create regridder to the [weights] coordinates
-            rgrd = xe.Regridder(ds,weights,'bilinear')
-            # Regrid [ds] to [weights] grid
-            ds = rgrd(ds)
-            
-        else:
-            raise KeyError(target+' is not a supported target for regridding. Choose "weights" or "ds".')
+                elif target is 'weights':
+                    print('regridding data to weights grid...')
+                    # Create regridder to the [weights] coordinates
+                    rgrd = xe.Regridder(ds,weights,'bilinear')
+                    # Regrid [ds] to [weights] grid
+                    ds = rgrd(ds)
+
+                else:
+                    raise KeyError(target+' is not a supported target for regridding. Choose "weights" or "ds".')
             
         # Add weights to ds
         ds['weights'] = weights
@@ -338,7 +348,6 @@ def create_raster_polygons(ds,
     # Process weights
     ds,winf = process_weights(ds,weights,target=weights_target)
             
-    #breakpoint()
     # Mask
     if mask is not None:
         warnings.warn('Masking by grid not yet supported. Stay tuned...')
@@ -388,6 +397,9 @@ def create_raster_polygons(ds,
     # Add a "pixel idx" to make indexing better later
     gdf_pixels['pix_idx'] = gdf_pixels.index.values
     
+    # Add crs (normal lat/lon onto WGS84)
+    gdf_pixels = gdf_pixels.set_crs("EPSG:4326")
+    
     # Save the source grid for further reference
     source_grid = {'lat':ds_bnds.lat,'lon':ds_bnds.lon}
     
@@ -403,7 +415,8 @@ def get_pixel_overlaps(gdf_in,pix_agg):
     Finds, for each polygon in gdf_in, which pixels intersect it, and by how much. 
     
     Note: 
-    Uses WGS84 to calculate relative areas
+    Uses EASE-Grid 2.0 on the WGS84 datum to calculate relative areas
+    (see https://nsidc.org/data/ease)
     
     Keyword arguments:
     gdf_in     -- a GeoPandas GeoDataFrame giving the polygons over which 
@@ -440,9 +453,25 @@ def get_pixel_overlaps(gdf_in,pix_agg):
     # Add an index for each polygon as a column to make indexing easier
     if 'poly_idx' not in gdf_in.columns:
         gdf_in['poly_idx'] = gdf_in.index.values
+        
+    # Match up CRSes
+    pix_agg['gdf_pixels'] = pix_agg['gdf_pixels'].to_crs(gdf_in.crs)
 
     # Get GeoDataFrame of the overlaps between every pixel and the polygons
-    overlaps = gpd.overlay(gdf_in,pix_agg['gdf_pixels'],how='intersection')
+    # (using the EASE grid https://nsidc.org/data/ease)
+    if np.all(gdf_in.total_bounds[[1,3]]>0):
+        # If min/max lat are both in NH, use North grid
+        epsg_set = 'EPSG:6931'
+    elif np.all(gdf_in.total_bounds[[1,3]]<0):
+        # If min/max lat are both in SH, use South grid
+        epsg_set = 'EPSG:6932'
+    else:
+        # Otherwise, use the global/temperate grid
+        epsg_set = 'EPSG:6933'
+    
+    overlaps = gpd.overlay(gdf_in.to_crs(epsg_set),
+                           pix_agg['gdf_pixels'].to_crs(epsg_set),
+                           how='intersection')
     
     # Now, group by poly_idx (each polygon in the shapefile)
     #(check if poly_idx exists in gdf_in first?)
@@ -452,7 +481,11 @@ def get_pixel_overlaps(gdf_in,pix_agg):
     # area of each polygon is taken up by each pixel), the pixels 
     # corresponding to those areas, and the lat/lon coordinates of 
     # those pixels
-    overlap_info = ov_groups.agg(rel_area=pd.NamedAgg(column='geometry',aggfunc=lambda ds: [ds.area/ds.area.sum()]),
+    # aggfunc=lambda ds: normalize(ds.area) doesn't quite work for 
+    # some reason - would be great to use that though; it would get
+    # rid of the NaN warning that shows up 
+    #lambda ds: [ds.area/ds.area.sum()]
+    overlap_info = ov_groups.agg(rel_area=pd.NamedAgg(column='geometry',aggfunc=lambda ds: [normalize(ds.area)]),
                                   pix_idxs=pd.NamedAgg(column='pix_idx',aggfunc=lambda ds: [idx for idx in ds]),
                                   lat=pd.NamedAgg(column='lat',aggfunc=lambda ds: [x for x in ds]),
                                   lon=pd.NamedAgg(column='lon',aggfunc=lambda ds: [x for x in ds]))
@@ -467,7 +500,7 @@ def get_pixel_overlaps(gdf_in,pix_agg):
     overlap_info = overlap_info.reset_index()
     
     # Merge in pixel overlaps to the input polygon geodataframe
-    gdf_in = pd.merge(gdf_in,overlap_info,'inner')
+    gdf_in = pd.merge(gdf_in,overlap_info,'outer')
     
     # Drop 'geometry' eventually, just for size/clarity
     gdf_out = {'agg':gdf_in.drop('geometry',axis=1),
@@ -485,7 +518,8 @@ def get_pixel_overlaps(gdf_in,pix_agg):
 
 
 def pixel_overlaps(ds,gdf_in,
-                   weights=None,weights_target='ds'):
+                   weights=None,weights_target='ds',
+                   subset_bbox = True):
     """ Wrapper function for determining overlaps between grid and polygon
     
     For a geodataframe [gdf_in], takes an xarray structure [ds] (Dataset or 
@@ -524,11 +558,15 @@ def pixel_overlaps(ds,gdf_in,
     
     # Create a polygon for each pixel
     print('creating polygons for each pixel...')
-    pix_agg = create_raster_polygons(ds,subset_bbox=gdf_in,weights=weights)
+    if subset_bbox:
+        pix_agg = create_raster_polygons(ds,subset_bbox=gdf_in,weights=weights)
+    else:
+        pix_agg = create_raster_polygons(ds,subset_bbox=None,weights=weights)
     
     # Get overlaps between these pixel polygons and the gdf_in polygons
     print('calculating overlaps between pixels and output polygons...')
     gdf_out = get_pixel_overlaps(gdf_in,pix_agg)
+    print('success!')
     
     return gdf_out
 
@@ -558,8 +596,8 @@ def subset_find(ds0,ds1):
     # Need a test to make sure the grid is the same. So maybe the gdf_out class 
     # has the lat/lon grid included - and then we can skip the lat/lon column
     # and just keep the pix_idxs
-    if ((len(ds0.lat) is not len(ds1['lat'])) or (len(ds0.lon) is not len(ds1['lon'])) or
-         not (np.allclose(ds1['lat'],ds0.lat)) or not (np.allclose(ds1['lon'],ds0.lon))):
+    if (not np.allclose(len(ds0.lat),len(ds1['lat'])) or (not np.allclose(len(ds0.lon),len(ds1['lon']))) or
+         (not np.allclose(ds1['lat'],ds0.lat)) or (not np.allclose(ds1['lon'],ds0.lon))):
         print('adjusting grid... (this may happen because only a subset of pixels '+
               'were used for aggregation for efficiency - i.e. [subset_bbox=True] in '+
              '[create_raster_polygons])') #(this also happens because ds and ds_bnds above was already subset)
@@ -645,16 +683,22 @@ def aggregate(ds,gdf_out):
             print('aggregating '+var+'...')
             # Create the column for the relevant variable
             gdf_out['agg'][var] = None
-
+            #breakpoint()
             # Get weighted average of variable based on pixel overlap + other weights
             for poly_idx in gdf_out['agg'].poly_idx:
                 # Get average value of variable over the polygon; weighted by 
                 # how much of the pixel area is in the polygon, and by (optionally)
                 # a separate gridded weight
-                gdf_out['agg'].loc[poly_idx,var] = [[((ds[var].isel(loc=gdf_out['agg'].iloc[poly_idx,:].pix_idxs)*
-                                                       normalize(gdf_out['agg'].iloc[poly_idx,:].rel_area*
-                                                                 np.transpose(weights[gdf_out['agg'].iloc[poly_idx,:].pix_idxs]))).
-                                                      sum('loc')).values]]
+                try:
+                    if gdf_out['agg'].iloc[poly_idx,:].pix_idxs is not np.nan:
+                        gdf_out['agg'].loc[poly_idx,var] = [[((ds[var].isel(loc=gdf_out['agg'].iloc[poly_idx,:].pix_idxs)*
+                                                               normalize(np.squeeze(gdf_out['agg'].iloc[poly_idx,:].rel_area)*
+                                                                 weights[gdf_out['agg'].iloc[poly_idx,:].pix_idxs])).
+                                                              sum('loc')).values]]
+                    else:
+                        gdf_out['agg'].loc[poly_idx,var] = [[np.array(np.nan)]]
+                except:
+                    breakpoint()
                 
     # Return
     print('all variables aggregated to polygons!')
@@ -726,7 +770,7 @@ def prep_for_nc(gdf_out,ds,loc_dim='poly_idx'):
 
 
 def prep_for_csv(gdf_out,ds):
-    """ Preps aggregated data for output as a netcdf
+    """ Preps aggregated data for output as a csv
     
     Concretely, aggregated data is placed in a new pandas dataframe
     and expanded wide - each aggregated variable is placed in new 
