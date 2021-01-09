@@ -2,7 +2,7 @@
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ks905383/xagg/HEAD?filepath=sample_run.ipynb)
 
-A package (eventually) to aggregated gridded data in `xarray` to polygons in `geopandas` using area-weighting from the relative area overlaps between pixels and polygons. Check out the binder link above for a sample code run!
+A package to aggregate gridded data in `xarray` to polygons in `geopandas` using area-weighting from the relative area overlaps between pixels and polygons. Check out the binder link above for a sample code run!
 
 ## Installation 
 The easiest way to install `xagg` is using `pip`. Beware though - `xagg` is still a work in progress; I suggest you install it to a virtual environment first (using e.g. `venv`, or just creating a separate environment in `conda` for projects using `xagg`). 
@@ -35,7 +35,22 @@ gdf = gpd.open_dataset('file.shp')
 
 `xagg` will then figure out the geographic grid (lat/lon) in `ds`, create polygons for each pixel, and then generate intersects between every polygon in the shapefile and every pixel. For each polygon in the shapefile, the relative area of each covering pixel is calculated - so, for example, if a polygon (say, a US county) is the size and shape of a grid pixel, but is split halfway between two pixels, the weight for each pixel will be 0.5, and the value of the gridded variables on that polygon will just be the average of both [TO-DO: add visual example of this]. 
 
-I know you often need to weight your data by more than just its relative area overlap with a polygon (for example, do you want to weight pixels with more population more?). `xagg` has a built-in support for adding an additional weight grid (another `xarray` DataArray) into `xagg.pixel_overlaps()`. 
+The two lines mentioned before? 
+```
+import xagg as xa
+
+# Get overlap between pixels and polygons
+pix_agg = xa.pixel_overlaps(ds,gdf)
+
+# Aggregate data in [ds] onto polygons
+gdf_out = xa.aggregate(ds,pix_agg)
+
+# gdf_out can now be converted into an xarray dataset (using xa.prep_for_nc()), 
+# or a geopandas geodataframe (using xa.prep_for_csv()), or directly exported 
+# to netcdf, csv, or shp files using xa.output_data().
+```
+
+Researchers often need to weight your data by more than just its relative area overlap with a polygon (for example, do you want to weight pixels with more population more?). `xagg` has a built-in support for adding an additional weight grid (another `xarray` DataArray) into `xagg.pixel_overlaps()`. 
 
 Finally, `xagg` allows for direct exporting of the aggregated data in several commonly used data formats (please open issues if you'd like support for something else!):
 
@@ -57,7 +72,7 @@ Area-weighting of pixels onto polygons ensures that aggregating weather and clim
 `xagg` allows a simple population *and* area-averaging, in addition to export functions that will turn the aggregated data into output easily used in STATA or R for further calculations. 
 
 ## Left to do
-- Make this a package. It's currently a somewhat stable module, but a goal is to have this be a fully-built and tested package. 
+- ~Make this a package. It's currently a somewhat stable module, but a goal is to have this be a fully-built and tested package.~ Complete!
 - Make the outputs to the two main wrapper functinos (`xagg.pixel_overlaps` and `xagg.aggregate`) their own `classes` with the export functions as bound methods of the `xagg.aggregate` output class. 
 - Just testing, bug fixes, stability checks, etc.
 - Share widely! I hope this will be helpful to a wide group of natural and social scientists who have to work with both gridded and polygon data!
