@@ -253,7 +253,7 @@ def subset_find(ds0,ds1):
          (not np.allclose(ds1['lat'],ds0.lat)) or (not np.allclose(ds1['lon'],ds0.lon))):
         print('adjusting grid... (this may happen because only a subset of pixels '+
               'were used for aggregation for efficiency - i.e. [subset_bbox=True] in '+
-             '[create_raster_polygons])') #(this also happens because ds and ds_bnds above was already subset)
+             'xa.pixel_overlaps())') #(this also happens because ds and ds_bnds above was already subset)
         # Zip up lat,lon pairs to allow comparison
         latlons = list(zip(ds0.lat.values,ds0.lon.values))
         latlons0 = list(zip(ds1['lat'].values,ds1['lon'].values))

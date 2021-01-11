@@ -46,24 +46,25 @@ def process_weights(ds,weights=None,target='ds'):
 
         # Regrid, if necessary (do nothing if the grids match up to within
         # floating-point precision)
-        if not ((ds.sizes['lat'] is weights.sizes['lat']) & (ds.sizes['lon'] is weights.sizes['lon'])):
-            if not (np.allclose(ds.lat,weights.lat) & np.allclose(ds.lon,weights.lon)):
-                if target is 'ds':
-                    print('regridding weights to data grid...')
-                    # Create regridder to the [ds] coordinates
-                    rgrd = xe.Regridder(weights,ds,'bilinear')
-                    # Regrid [weights] to [ds] grids
-                    weights = rgrd(weights)
+        if ((not ((ds.sizes['lat'] is weights.sizes['lat']) & (ds.sizes['lon'] is weights.sizes['lon']))) or 
+            (not (np.allclose(ds.lat,weights.lat) & np.allclose(ds.lon,weights.lon)))):
+            if target is 'ds':
+                print('regridding weights to data grid...')
+                # Create regridder to the [ds] coordinates
+                rgrd = xe.Regridder(weights,ds,'bilinear')
+                # Regrid [weights] to [ds] grids
+                weights = rgrd(weights)
 
-                elif target is 'weights':
-                    print('regridding data to weights grid...')
-                    # Create regridder to the [weights] coordinates
-                    rgrd = xe.Regridder(ds,weights,'bilinear')
-                    # Regrid [ds] to [weights] grid
-                    ds = rgrd(ds)
+            elif target is 'weights':
+                raise KeyError('The '+target+' variable is not *yet* supported as a target for regridding. Please choose "ds" for now.')
+                print('regridding data to weights grid...')
+                # Create regridder to the [weights] coordinates
+                rgrd = xe.Regridder(ds,weights,'bilinear')
+                # Regrid [ds] to [weights] grid
+                ds = rgrd(ds)
 
-                else:
-                    raise KeyError(target+' is not a supported target for regridding. Choose "weights" or "ds".')
+            else:
+                raise KeyError(target+' is not a supported target for regridding. Choose "weights" or "ds".')
             
         # Add weights to ds
         ds['weights'] = weights
@@ -351,8 +352,8 @@ def aggregate(ds,wm):
     if wm.weights is not 'nowghts':
         weights = np.array([float(k) for k in wm.weights])
     else:
-        weights = np.ones((len(wm.source_grid['lat']),1))
-        
+        weights = np.ones((len(wm.source_grid['lat'])))
+    
     for var in ds.var():
         # Process for every variable that has locational information, but isn't a 
         # bound variable
