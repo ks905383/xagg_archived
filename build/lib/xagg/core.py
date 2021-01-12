@@ -183,7 +183,8 @@ def create_raster_polygons(ds,
     gdf_pixels['pix_idx'] = gdf_pixels.index.values
     
     # Add crs (normal lat/lon onto WGS84)
-    gdf_pixels = gdf_pixels.set_crs("EPSG:4326")
+    #gdf_pixels = gdf_pixels.set_crs("EPSG:4326")
+    gdf_pixels.crs = {'init':'EPSG:4326'}
     
     # Save the source grid for further reference
     source_grid = {'lat':ds_bnds.lat,'lon':ds_bnds.lon}
