@@ -247,13 +247,13 @@ def get_pixel_overlaps(gdf_in,pix_agg):
     # (using the EASE grid https://nsidc.org/data/ease)
     if np.all(gdf_in.total_bounds[[1,3]]>0):
         # If min/max lat are both in NH, use North grid
-        epsg_set = 'EPSG:6931'
+        epsg_set = {'init':'EPSG:6931'}
     elif np.all(gdf_in.total_bounds[[1,3]]<0):
         # If min/max lat are both in SH, use South grid
-        epsg_set = 'EPSG:6932'
+        epsg_set = {'init':'EPSG:6932'}
     else:
         # Otherwise, use the global/temperate grid
-        epsg_set = 'EPSG:6933'
+        epsg_set = {'init':'EPSG:6933'}
     
     overlaps = gpd.overlay(gdf_in.to_crs(epsg_set),
                            pix_agg['gdf_pixels'].to_crs(epsg_set),
