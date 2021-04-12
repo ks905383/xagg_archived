@@ -66,7 +66,7 @@ def prep_for_nc(agg_obj,loc_dim='poly_idx'):
         
         
     # Rename poly_idx if desired
-    if loc_dim is not 'poly_idx':
+    if loc_dim != 'poly_idx':
         ds_out = ds_out.rename({'poly_idx':loc_dim})
         
     # Return ds_out
@@ -159,7 +159,7 @@ def output_data(agg_obj,output_format,output_fn,loc_dim='poly_idx'):
      
     """
 
-    if output_format is 'netcdf':
+    if output_format == 'netcdf':
 
         ds_out = prep_for_nc(agg_obj,loc_dim=loc_dim)
 
@@ -172,7 +172,7 @@ def output_data(agg_obj,output_format,output_fn,loc_dim='poly_idx'):
         # Return
         return ds_out
 
-    elif output_format is 'csv':
+    elif output_format == 'csv':
 
         csv_out = prep_for_csv(agg_obj)
 
@@ -185,7 +185,7 @@ def output_data(agg_obj,output_format,output_fn,loc_dim='poly_idx'):
         # Return 
         return csv_out
 
-    elif output_format is 'shp':
+    elif output_format == 'shp':
         # This uses the same processing as the to_csv option above, since 
         # shapefiles function similarly (each field can only have one value
         # for each polygon, etc.)

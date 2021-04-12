@@ -32,7 +32,7 @@ class weightmap(object):
         self.weights = weights
         
     def diag_fig(self,poly_idx):
-        warnings.warn('functionality does not yet exist.')
+        raise NotImplementedError('diagnostic figure not yet implemented.')
         # Eventually, will print a diagnostic figure showing 
         # - the polygon defined by "poly_idx"
         # - the pixels overlapping polygon
