@@ -1,4 +1,9 @@
-# xagg
+# xagg (ARCHIVED)
+
+This is the old repo for `xagg`. Please visit https://github.com/ks905383/xagg for the repo corresponding to the latest releases!
+
+
+
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ks905383/xagg/HEAD?filepath=sample_run.ipynb)
 
